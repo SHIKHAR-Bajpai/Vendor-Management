@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Find Nearby Shops</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        #shops {
+            margin-top: 20px;
+        }
+        .shop {
+            padding: 10px;
+            border: 1px solid #ccc;
+            margin: 5px;
+            border-radius: 5px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <h1>Find Nearby Shops</h1>
+    <button onclick="getLocation()">Find Shops Near Me</button>
+    <div id="shops"></div>
+
+    <script>
+        function getLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(fetchNearbyShops, showError);
+            } else {
+                alert("Geolocation is not supported by your browser.");
+            }
+        }
+
+        function fetchNearbyShops(position) {
+            const latitude = position.coords.latitude 
+            const longitude = position.coords.longitude 
+            const radius = 50; 
+
+            const apiUrl = `http://127.0.0.1:5000/shops/nearby?latitude=${latitude}&longitude=${longitude}&radius=${radius}`;
+
+            fetch(apiUrl)
+                .then(response => response.json())
+                .then(data => displayShops(data.shops))
+                .catch(error => console.error("Error fetching shops:", error));
+        }
+
+        function displayShops(shops) {
+            const shopContainer = document.getElementById("shops");
+            shopContainer.innerHTML = ""; 
+
+            if (shops.length === 0) {
+                shopContainer.innerHTML = "<p>No nearby shops found.</p>";
+                return;
+            }
+
+            shops.forEach(shop => {
+                const shopDiv = document.createElement("div");
+                shopDiv.className = "shop";
+                shopDiv.innerHTML = `<strong>${shop.shop_name}</strong><br>Type: ${shop.type}`;
+                shopContainer.appendChild(shopDiv);
+            });
+        }
+
+        function showError(error) {
+            alert("Error getting location: " + error.message);
+        }
+    </script>
+</body>
+</html>
