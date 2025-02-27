@@ -3,77 +3,199 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Find Nearby Shops</title>
+    <title>ShopFinder - Find Local Shops Near You</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin: 20px;
+        .hero-section {
+            padding: 4rem 0;
+            background-color: #f8f9fa;
         }
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
+        .shop-card {
+            transition: transform 0.3s;
+            height: 100%;
         }
-        #shops {
-            margin-top: 20px;
+        .shop-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
         }
-        .shop {
-            padding: 10px;
-            border: 1px solid #ccc;
-            margin: 5px;
-            border-radius: 5px;
-            display: inline-block;
+        .footer {
+            margin-top: 3rem;
+            padding: 2rem 0;
+            background-color: #343a40;
+            color: white;
+        }
+        #map {
+            height: 400px;
+            width: 100%;
+            border-radius: 8px;
         }
     </style>
 </head>
 <body>
-    <h1>Find Nearby Shops</h1>
-    <button onclick="getLocation()">Find Shops Near Me</button>
-    <div id="shops"></div>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">ShopFinder</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" role="button" onclick="findShops()">Find Shops</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item" id="loginNav">
+                        <a class="nav-link" href="/login">Login</a>
+                    </li>
+                    <li class="nav-item" id="registerNav">
+                        <a class="nav-link" href="/register">Register</a>
+                    </li>
+                    <li class="nav-item d-none" id="dashboardNav">
+                        <a class="nav-link" href="/dashboard">Dashboard</a>
+                    </li>
+                    <li class="nav-item d-none" id="logoutNav">
+                        <a class="nav-link" href="/" id="logoutBtn">Logout</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
 
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="container text-center">
+            <h1 class="display-4">Find Local Shops Near You</h1>
+            <p class="lead">Discover nearby businesses with just one click</p>
+            <button class="btn btn-primary btn-lg" id="locateBtn" onclick="findShops()">Find Nearby Shops</button>
+        </div>
+    </section>
+
+    <!-- Map Section -->
+    <section class="container my-5">
+        <div class="row">
+            <div class="col-md-12">
+                <div id="map" class="shadow d-none"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Shops Section -->
+    <section class="container my-5">
+        <h2 class="text-center mb-4">Nearby Shops</h2>
+        <div class="row" id="shopsContainer">
+            <!-- Shops will be displayed here -->
+            <div class="col-12 text-center" id="initialMessage">
+                <p>Click "Find Nearby Shops" to discover businesses around you</p>
+            </div>
+            <div id="shops"></div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container text-center">
+            <p>© 2025 ShopFinder. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+    
     <script>
-        function getLocation() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(fetchNearbyShops, showError);
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuthStatus();
+        })
+            
+
+            function findShops() {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(async (position) => {
+                        const { latitude, longitude} = position.coords;
+                        let radius = 5000
+                        try {
+                            const response = await fetch(`/shops/nearby?latitude=${latitude}&longitude=${longitude}&radius=${radius}`);
+                            const shops = await response.json();
+                            if (!Array.isArray(shops)) {
+                            console.error("Invalid data format:", shops);
+                            return;
+                            }
+                            displayShops(shops);
+                        } catch (error) {
+                            console.error("Error fetching shops:", error);
+                            document.getElementById("shops").innerHTML = "<p class='text-danger'>Failed to load shops.</p>";
+                        }
+                    }, (error) => {
+                        console.error("Geolocation error:", error);
+                        document.getElementById("shops").innerHTML = "<p class='text-danger'>Location access denied.</p>";
+                    });
+                } else {
+                    document.getElementById("shops").innerHTML = "<p class='text-danger'>Geolocation is not supported.</p>";
+                }
+            }
+
+            function displayShops(shops) {
+                const shopListElement = document.getElementById("shops");
+
+                if (!shopListElement) {
+                    console.error("Error: Element with ID 'shops' not found.");
+                    return;
+                }
+                
+                let html = "<ul class='list-group mt-3 mx-auto'>";
+                if (shops.length === 0) {
+                    html += "<li class='list-group-item'>No shops found nearby.</li>";
+                            } else {
+                    shops.forEach(shop => {
+                        html += `<li class='list-group-item'>
+                                    <strong>${shop.shop_name}</strong><br>
+                                    Owner: ${shop.owner_name}<br>
+                                    Type: ${shop.type}<br>
+                                    Latitude: ${shop.latitude} Longitude: ${shop.longitude}<br>
+                                </li>`;
+                    });
+                }
+                html += "</ul>";
+                shopListElement.innerHTML = html;
+            }
+
+
+        function checkAuthStatus() {
+            const isAuthenticated = localStorage.getItem("isAuthenticated"); 
+    
+            const loginNav = document.getElementById("loginNav");
+            const registerNav = document.getElementById("registerNav");
+            const dashboardNav = document.getElementById("dashboardNav");
+            const profileNav = document.getElementById("profileNav");
+            const logoutNav = document.getElementById("logoutNav");
+    
+            if (isAuthenticated) {
+                loginNav.classList.add("d-none");
+                registerNav.classList.add("d-none");
+                dashboardNav.classList.remove("d-none");
+                logoutNav.classList.remove("d-none");
             } else {
-                alert("Geolocation is not supported by your browser.");
+                loginNav.classList.remove("d-none");
+                registerNav.classList.remove("d-none");
+                dashboardNav.classList.add("d-none");
+                logoutNav.classList.add("d-none");
             }
         }
+    
+        document.getElementById("logoutBtn").addEventListener("click", function () {
+            localStorage.removeItem("isAuthenticated"); 
+            checkAuthStatus();
+            window.location.href = "/";
+        });
 
-        function fetchNearbyShops(position) {
-            const latitude = position.coords.latitude 
-            const longitude = position.coords.longitude 
-            const radius = 50; 
-
-            const apiUrl = `http://127.0.0.1:5000/shops/nearby?latitude=${latitude}&longitude=${longitude}&radius=${radius}`;
-
-            fetch(apiUrl)
-                .then(response => response.json())
-                .then(data => displayShops(data.shops))
-                .catch(error => console.error("Error fetching shops:", error));
-        }
-
-        function displayShops(shops) {
-            const shopContainer = document.getElementById("shops");
-            shopContainer.innerHTML = ""; 
-
-            if (shops.length === 0) {
-                shopContainer.innerHTML = "<p>No nearby shops found.</p>";
-                return;
-            }
-
-            shops.forEach(shop => {
-                const shopDiv = document.createElement("div");
-                shopDiv.className = "shop";
-                shopDiv.innerHTML = `<strong>${shop.shop_name}</strong><br>Type: ${shop.type}`;
-                shopContainer.appendChild(shopDiv);
-            });
-        }
-
-        function showError(error) {
-            alert("Error getting location: " + error.message);
-        }
     </script>
 </body>
-</html>
+</html> 

@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vendor Dashboard - ShopFinder</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        .dashboard-header {
+            background-color: #f8f9fa;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+
+        .shop-card {
+            transition: transform 0.2s;
+        }
+
+        .shop-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .add-shop-card {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border: 2px dashed #dee2e6;
+            background-color: #f8f9fa;
+        }
+
+        .add-shop-card:hover {
+            background-color: #e9ecef;
+        }
+
+        .btn-icon {
+            padding: 0.25rem 0.5rem;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">ShopFinder</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/dashboard">Dashboard</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/profile">My Profile</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/" id="logoutBtn">Logout</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Dashboard Header -->
+    <header class="dashboard-header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1>Your Shops Dashboard</h1>
+                    <p class="lead" id="welcomeMessage">Manage all your shops from one place</p>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addShopModal">
+                        <i class="bi bi-plus-circle"></i> Add New Shop
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Shops Section -->
+    <section class="container">
+        <div class="row" id="shopsContainer">
+            <div class="col-12 text-center">
+                <div class="spinner-border" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p>Loading your shops...</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Add Shop Modal -->
+    <div class="modal fade" id="addShopModal" tabindex="-1" aria-labelledby="addShopModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addShopModalLabel">Add New Shop</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger d-none" id="addShopError"></div>
+                    <form id="addShopForm">
+                        <div class="mb-3">
+                            <label for="shopName" class="form-label">Shop Name</label>
+                            <input type="text" class="form-control" id="shopName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="ownerName" class="form-label">Owner Name</label>
+                            <input type="text" class="form-control" id="ownerName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="shopType" class="form-label">Shop Type</label>
+                            <select class="form-select" id="shopType" required>
+                                <option value="">Select a type</option>
+                                <option value="Restaurant">Restaurant</option>
+                                <option value="Retail">Retail</option>
+                                <option value="Grocery">Grocery</option>
+                                <option value="Services">Services</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Location</label>
+                            <div class="input-group mb-3">
+                                <span class="input-group-text">Latitude</span>
+                                <input type="number" class="form-control" id="latitude" step="0.000001" required>
+                                <span class="input-group-text">Longitude</span>
+                                <input type="number" class="form-control" id="longitude" step="0.000001" required>
+                            </div>
+                            <div class="d-grid">
+                                <button type="button" class="btn btn-outline-secondary btn-sm" id="getCurrentLocation">
+                                    <i class="bi bi-geo-alt"></i> Use My Current Location
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="saveShopBtn">Save Shop</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Shop Modal -->
+    <div class="modal fade" id="editShopModal" tabindex="-1" aria-labelledby="editShopModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editShopModalLabel">Edit Shop</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger d-none" id="editShopError"></div>
+                    <form id="editShopForm">
+                        <input type="hidden" id="editShopId">
+                        <div class="mb-3">
+                            <label for="editShopName" class="form-label">Shop Name</label>
+                            <input type="text" class="form-control" id="editShopName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editOwnerName" class="form-label">Owner Name</label>
+                            <input type="text" class="form-control" id="editOwnerName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editShopType" class="form-label">Shop Type</label>
+                            <select class="form-select" id="editShopType" required>
+                                <option value="">Select a type</option>
+                                <option value="Restaurant">Restaurant</option>
+                                <option value="Retail">Retail</option>
+                                <option value="Grocery">Grocery</option>
+                                <option value="Services">Services</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Location</label>
+                            <div class="input-group mb-3">
+                                <span class="input-group-text">Latitude</span>
+                                <input type="number" class="form-control" id="editLatitude" step="0.000001" required>
+                                <span class="input-group-text">Longitude</span>
+                                <input type="number" class="form-control" id="editLongitude" step="0.000001" required>
+                            </div>
+                            <div class="d-grid">
+                                <button type="button" class="btn btn-outline-secondary btn-sm" id="getEditLocation">
+                                    <i class="bi bi-geo-alt"></i> Use My Current Location
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="updateShopBtn">Update Shop</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteShopModal" tabindex="-1" aria-labelledby="deleteShopModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteShopModalLabel">Confirm Delete</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete <span id="deleteShopName" class="fw-bold"></span>?</p>
+                    <p class="text-danger">This action cannot be undone.</p>
+                    <input type="hidden" id="deleteShopId">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete Shop</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- App Scripts -->
+    <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Check authentication
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // Set welcome message
+            const email = localStorage.getItem('userEmail');
+            if (email) {
+                document.getElementById('welcomeMessage').textContent = `Welcome, ${email}! Manage all your shops from one place.`;
+            }
+
+            // DOM elements
+            const shopsContainer = document.getElementById('shopsContainer');
+            const addShopForm = document.getElementById('addShopForm');
+            const editShopForm = document.getElementById('editShopForm');
+
+            // Fetch all shops
+            fetchShops();
+
+            // Event listeners
+            document.getElementById('logoutBtn').addEventListener('click', logout);
+            document.getElementById('saveShopBtn').addEventListener('click', addShop);
+            document.getElementById('updateShopBtn').addEventListener('click', updateShop);
+            document.getElementById('confirmDeleteBtn').addEventListener('click', deleteShop);
+            document.getElementById('getCurrentLocation').addEventListener('click', getCurrentLocation);
+            document.getElementById('getEditLocation').addEventListener('click', getEditLocation);
+
+            // Function to get current location for new shop
+            function getCurrentLocation() {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition((position) => {
+                        document.getElementById('latitude').value = position.coords.latitude;
+                        document.getElementById('longitude').value = position.coords.longitude;
+                    }, (error) => {
+                        alert(`Error getting location: ${error.message}`);
+                    });
+                } else {
+                    alert('Geolocation is not supported by your browser.');
+                }
+            }
+
+            // Function to get current location for edit shop
+            function getEditLocation() {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition((position) => {
+                        document.getElementById('editLatitude').value = position.coords.latitude;
+                        document.getElementById('editLongitude').value = position.coords.longitude;
+                    }, (error) => {
+                        alert(`Error getting location: ${error.message}`);
+                    });
+                } else {
+                    alert('Geolocation is not supported by your browser.');
+                }
+            }
+
+            // Fetch all shops function
+            async function fetchShops() {
+                try {
+                    const response = await fetch('/shops/', {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch shops');
+                    }
+
+                    const shops = await response.json();
+                    displayShops(shops);
+
+                } catch (error) {
+                    console.error('Error fetching shops:', error);
+                    shopsContainer.innerHTML = `
+                        <div class="col-12 text-center">
+                            <div class="alert alert-danger">
+                                Error loading shops. Please try again.
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+
+            // Display shops function
+            function displayShops(shops) {
+                if (shops.length === 0) {
+                    shopsContainer.innerHTML = `
+                        <div class="col-12 text-center mb-4">
+                            <div class="alert alert-info">
+                                You don't have any shops yet. Add your first shop to get started!
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    shopsContainer.innerHTML = '';
+                    shops.forEach(shop => {
+                        const shopCard = document.createElement('div');
+                        shopCard.className = 'col-md-4 mb-4';
+                        shopCard.innerHTML = `
+                            <div class="card shop-card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">${shop.shop_name}</h5>
+                                    <h6 class="card-subtitle mb-2 text-muted">${shop.type}</h6>
+                                    <p class="card-text">Owner: ${shop.owner_name}</p>
+                                    <p class="card-text small">
+                                        Location: ${shop.latitude.toFixed(4)}, ${shop.longitude.toFixed(4)}
+                                    </p>
+                                </div>
+                                <div class="card-footer bg-transparent border-top-0">
+                                    <div class="d-flex justify-content-end">
+                                        <button class="btn btn-sm btn-outline-primary me-2 edit-shop-btn" 
+                                            data-shop-id="${shop.shop_id}" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#editShopModal">
+                                            <i class="bi bi-pencil"></i> Edit
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger delete-shop-btn" 
+                                            data-shop-id="${shop.shop_id}" 
+                                            data-shop-name="${shop.shop_name}" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#deleteShopModal">
+                                            <i class="bi bi-trash"></i> Delete
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        shopsContainer.appendChild(shopCard);
+                    });
+                }
+
+                // Add event listeners to all shop cards
+                document.querySelectorAll('.edit-shop-btn').forEach(btn => {
+                    btn.addEventListener('click', function () {
+                        const shopId = this.getAttribute('data-shop-id');
+                        populateEditForm(shopId, shops);
+                    });
+                });
+
+                document.querySelectorAll('.delete-shop-btn').forEach(btn => {
+                    btn.addEventListener('click', function () {
+                        const shopId = this.getAttribute('data-shop-id');
+                        const shopName = this.getAttribute('data-shop-name');
+                        document.getElementById('deleteShopId').value = shopId;
+                        document.getElementById('deleteShopName').textContent = shopName;
+                    });
+                });
+            }
+
+            // Populate edit form function
+            function populateEditForm(shopId, shops) {
+                const shop = shops.find(s => s.shop_id == shopId);
+                if (shop) {
+                    document.getElementById('editShopId').value = shop.shop_id;
+                    document.getElementById('editShopName').value = shop.shop_name;
+                    document.getElementById('editOwnerName').value = shop.owner_name;
+                    document.getElementById('editShopType').value = shop.type;
+                    document.getElementById('editLatitude').value = shop.latitude;
+                    document.getElementById('editLongitude').value = shop.longitude;
+                }
+            }
+
+            // Add shop function
+            async function addShop() {
+                const shopName = document.getElementById('shopName').value;
+                const ownerName = document.getElementById('ownerName').value;
+                const shopType = document.getElementById('shopType').value;
+                const latitude = parseFloat(document.getElementById('latitude').value);
+                const longitude = parseFloat(document.getElementById('longitude').value);
+                const errorElement = document.getElementById('addShopError');
+
+                // Form validation
+                if (!shopName || !ownerName || !shopType || isNaN(latitude) || isNaN(longitude)) {
+                    errorElement.textContent = 'Please fill in all fields';
+                    errorElement.classList.remove('d-none');
+                    return;
+                }
+
+                const shopData = {
+                    shop_name: shopName,
+                    owner_name: ownerName,
+                    type: shopType,
+                    latitude: latitude,
+                    longitude: longitude
+                };
+
+                try {
+                    const response = await fetch('/shops/create', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify(shopData)
+                    });
+
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(data.error || 'Failed to add shop');
+                    }
+
+                    // Close modal and reset form
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('addShopModal'));
+                    modal.hide();
+                    addShopForm.reset();
+                    errorElement.classList.add('d-none');
+
+                    // Refresh shop list
+                    fetchShops();
+
+                } catch (error) {
+                    errorElement.textContent = error.message;
+                    errorElement.classList.remove('d-none');
+                }
+            }
+
+            // Update shop function
+            async function updateShop() {
+                const shopId = document.getElementById('editShopId').value;
+                const shopName = document.getElementById('editShopName').value;
+                const ownerName = document.getElementById('editOwnerName').value;
+                const shopType = document.getElementById('editShopType').value;
+                const latitude = parseFloat(document.getElementById('editLatitude').value);
+                const longitude = parseFloat(document.getElementById('editLongitude').value);
+                const errorElement = document.getElementById('editShopError');
+
+                // Form validation
+                if (!shopName || !ownerName || !shopType || isNaN(latitude) || isNaN(longitude)) {
+                    errorElement.textContent = 'Please fill in all fields';
+                    errorElement.classList.remove('d-none');
+                    return;
+                }
+
+                const shopData = {
+                    shop_name: shopName,
+                    owner_name: ownerName,
+                    type: shopType,
+                    latitude: latitude,
+                    longitude: longitude
+                };
+
+                try {
+                    const response = await fetch(`/shops/update/${shopId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify(shopData)
+                    });
+
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(data.error || 'Failed to update shop');
+                    }
+
+                    // Close modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('editShopModal'));
+                    modal.hide();
+                    errorElement.classList.add('d-none');
+
+                    // Refresh shop list
+                    fetchShops();
+
+                } catch (error) {
+                    errorElement.textContent = error.message;
+                    errorElement.classList.remove('d-none');
+                }
+            }
+
+            // Delete shop function
+            async function deleteShop() {
+                const shopId = document.getElementById('deleteShopId').value;
+
+                try {
+                    const response = await fetch(`/shops/delete/${shopId}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(data.error || 'Failed to delete shop');
+                    }
+
+                    // Close modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('deleteShopModal'));
+                    modal.hide();
+
+                    // Refresh shop list
+                    fetchShops();
+
+                } catch (error) {
+                    console.error('Error deleting shop:', error);
+                    alert(`Error: ${error.message}`);
+                }
+            }
+
+            // Logout function
+            function logout() {
+                localStorage.removeItem('token');
+                localStorage.removeItem('userEmail');
+                window.location.href = 'index.html';
+            }
+        });
+    </script>
+</body>
+
+</html>
